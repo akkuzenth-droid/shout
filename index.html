@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCREAM OR DO A DARE! - Chaos Arcade</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Space+Grotesk:wght@600;800&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    :root {
+      --bg: #f4efe0;
+      --ink: #111111;
+      --yellow: #ffe600;
+      --red: #ff2a3c;
+      --cyan: #00e5ff;
+      --lime: #52ff33;
+      --purple: #9d4edd;
+      --cream: #fff9e8;
+    }
+
+    body {
+      background: #1a1817;
+      background-image:
+        radial-gradient(#2c2826 2px, transparent 2px);
+      background-size: 18px 18px;
+      color: var(--ink);
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 10px;
+      overflow-x: hidden;
+    }
+
+    #game-wrapper {
+      width: 980px;
+      max-width: 98vw;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Comic Top Strip */
+    #top-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--yellow);
+      border: 4px solid var(--ink);
+      box-shadow: 6px 6px 0 var(--ink);
+      padding: 8px 16px;
+      gap: 10px;
+      flex-wrap: wrap;
+      transform: rotate(-0.3deg);
+    }
+
+    .comic-font {
+      font-family: 'Bangers', Impact, sans-serif;
+      letter-spacing: 1.5px;
+    }
+
+    #level-tag {
+      font-size: 24px;
+      color: var(--ink);
+      background: #fff;
+      border: 3px solid var(--ink);
+      padding: 2px 10px;
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+
+    #mutator-tag {
+      font-size: 15px;
+      font-weight: 800;
+      background: var(--red);
+      color: #fff;
+      border: 3px solid var(--ink);
+      padding: 4px 12px;
+      box-shadow: 3px 3px 0 var(--ink);
+      text-transform: uppercase;
+    }
+
+    #party-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      background: var(--cream);
+      border: 3px solid var(--ink);
+      padding: 4px 10px;
+      cursor: pointer;
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+    #party-toggle input { width: 16px; height: 16px; accent-color: var(--red); cursor: pointer; }
+
+    /* Scoreboard & Meters */
+    #hud {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr 1fr;
+      align-items: center;
+      background: var(--cream);
+      border: 4px solid var(--ink);
+      box-shadow: 6px 6px 0 var(--ink);
+      padding: 10px 16px;
+      gap: 14px;
+    }
+
+    .score-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .score-card.right { justify-content: flex-end; }
+
+    .score-num {
+      font-family: 'Bangers', Impact, sans-serif;
+      font-size: 42px;
+      line-height: 1;
+      padding: 2px 12px;
+      border: 3px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+    .bot-score { background: var(--red); color: #fff; }
+    .you-score { background: var(--lime); color: var(--ink); }
+
+    .score-meta {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .score-name { font-weight: 800; font-size: 14px; text-transform: uppercase; }
+    .score-goal { font-size: 12px; font-weight: 800; opacity: 0.7; }
+
+    /* Volume + Pitch Meters */
+    #meters {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .meter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .meter-title { width: 68px; text-transform: uppercase; }
+    .bar-shell {
+      position: relative;
+      flex: 1;
+      height: 18px;
+      background: #222;
+      border: 3px solid var(--ink);
+      overflow: hidden;
+    }
+    #vol-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--lime) 0%, var(--yellow) 60%, var(--red) 100%);
+      transition: width 0.03s linear;
+    }
+    #thresh-line {
+      position: absolute;
+      top: 0; bottom: 0; width: 4px;
+      background: #fff;
+      border-left: 1px solid #000;
+      left: 22%;
+    }
+    #req-line {
+      position: absolute;
+      top: 0; bottom: 0; width: 4px;
+      background: var(--red);
+      border-left: 1px solid #fff;
+      display: none;
+    }
+
+    #pitch-shell {
+      position: relative;
+      flex: 1;
+      height: 14px;
+      background: linear-gradient(90deg, #ff5500 0%, #ffe600 50%, #00e5ff 100%);
+      border: 3px solid var(--ink);
+    }
+    #pitch-needle {
+      position: absolute;
+      top: -2px; bottom: -2px;
+      width: 8px;
+      background: #fff;
+      border: 2px solid #000;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: left 0.06s linear;
+    }
+    #pitch-label {
+      width: 58px;
+      text-align: right;
+      font-weight: 800;
+    }
+
+    /* Arena Canvas */
+    #arena-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: 5px solid var(--ink);
+      box-shadow: 8px 8px 0 var(--ink);
+      background: #14131a;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Overlays (Start / Dare Penalty / Level Clear) */
+    .comic-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(17, 17, 17, 0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 20;
+    }
+    .comic-overlay.hidden { display: none; }
+
+    .comic-card {
+      background: var(--cream);
+      border: 5px solid var(--ink);
+      box-shadow: 10px 10px 0 var(--ink);
+      padding: 22px 26px;
+      max-width: 620px;
+      width: 95%;
+      text-align: center;
+      transform: rotate(-0.6deg);
+    }
+    .comic-card.dare-card {
+      background: var(--yellow);
+      transform: rotate(0.8deg);
+    }
+
+    .comic-card h1 {
+      font-family: 'Bangers', Impact, sans-serif;
+      font-size: clamp(32px, 5vw, 54px);
+      letter-spacing: 2px;
+      color: var(--red);
+      text-shadow: 3px 3px 0 var(--ink);
+      -webkit-text-stroke: 1.5px var(--ink);
+      margin-bottom: 8px;
+    }
+    .comic-card p {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .dare-box {
+      background: #fff;
+      border: 4px solid var(--ink);
+      box-shadow: 5px 5px 0 var(--ink);
+      padding: 14px;
+      margin: 12px 0;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .dare-sub {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--red);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    #dare-progress-wrap {
+      width: 100%;
+      height: 22px;
+      background: #222;
+      border: 3px solid var(--ink);
+      margin: 10px 0 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    #dare-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--lime);
+      transition: width 0.05s linear;
+    }
+    #dare-progress-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 1px 1px 0 #000;
+    }
+
+    /* Level Picker */
+    #lvl-picker {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .lvl-btn {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 6px 10px;
+      background: #fff;
+      border: 3px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      cursor: pointer;
+    }
+    .lvl-btn.active {
+      background: var(--cyan);
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .punch-btn {
+      font-family: 'Bangers', Impact, sans-serif;
+      font-size: 24px;
+      letter-spacing: 1.5px;
+      padding: 10px 22px;
+      border: 4px solid var(--ink);
+      box-shadow: 5px 5px 0 var(--ink);
+      cursor: pointer;
+      transition: transform 0.08s;
+    }
+    .punch-btn:active {
+      transform: translate(3px, 3px);
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+    .btn-go { background: var(--lime); color: var(--ink); }
+    .btn-alt { background: var(--cyan); color: var(--ink); }
+    .btn-red { background: var(--red); color: #fff; }
+
+    /* Footer Controls */
+    #footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--cream);
+      border: 4px solid var(--ink);
+      box-shadow: 5px 5px 0 var(--ink);
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .slider-wrap { display: flex; align-items: center; gap: 6px; }
+    input[type="range"] { accent-color: var(--red); cursor: pointer; }
+    .key-pill {
+      background: var(--yellow);
+      border: 2px solid var(--ink);
+      padding: 1px 6px;
+      font-size: 11px;
+    }
+    #mic-err { color: var(--red); font-size: 13px; font-weight: 800; margin-top: 8px; display: none; }
+  </style>
+</head>
+<body>
+
+<div id="game-wrapper">
+  <!-- Top Comic Strip -->
+  <div id="top-strip">
+    <div id="level-tag" class="comic-font">LVL 1: TOASTER PUNK</div>
+    <div id="mutator-tag">CHALLENGE: SHOUT THE WORD!</div>
+    <label id="party-toggle" title="Get a Dare on EVERY lost point instead of only when you lose the match!">
+      <input type="checkbox" id="party-mode-cb" checked />
+      <span>DARE ON EVERY LOSS</span>
+    </label>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="score-card">
+      <div id="bot-score" class="score-num bot-score">0</div>
+      <div class="score-meta">
+        <span id="bot-name" class="score-name">TOASTER PUNK</span>
+        <span class="score-goal">FIRST TO <span class="win-goal">3</span></span>
+      </div>
+    </div>
+
+    <div id="meters">
+      <div class="meter-row">
+        <span class="meter-title">LOUD: <span id="vol-num">0</span>%</span>
+        <div class="bar-shell">
+          <div id="vol-fill"></div>
+          <div id="thresh-line"></div>
+          <div id="req-line"></div>
+        </div>
+      </div>
+      <div class="meter-row">
+        <span class="meter-title">VOICE:</span>
+        <div id="pitch-shell">
+          <div id="pitch-needle"></div>
+        </div>
+        <span id="pitch-label">MID</span>
+      </div>
+    </div>
+
+    <div class="score-card right">
+      <div class="score-meta" style="text-align: right;">
+        <span class="score-name">YOU (SCREAMER)</span>
+        <span class="score-goal">FIRST TO <span class="win-goal">3</span></span>
+      </div>
+      <div id="you-score" class="score-num you-score">0</div>
+    </div>
+  </div>
+
+  <!-- 2D Arena -->
+  <div id="arena-box">
+    <canvas id="game" width="960" height="540"></canvas>
+
+    <!-- Start / Level Select Overlay -->
+    <div id="menu-overlay" class="comic-overlay">
+      <div class="comic-card">
+        <h1 id="menu-title">SCREAM OR DO A DARE!</h1>
+        <p id="menu-desc">
+          A crazy bot blasts balls at your face. <b>SHOUT INTO YOUR MIC</b> to smash them back!<br>
+          Survive <b>Word Prompts</b>, <b>Freeze Traps</b>, <b>Deep/High Pitch Tests</b>, &amp; <b>Chaos Roulette</b>.<br>
+          <b>IF YOU LOSE? YOU GOTTA DO THE DARE!</b>
+        </p>
+
+        <div id="lvl-picker">
+          <button class="lvl-btn active" data-lvl="0">1. SHOUT WORDS</button>
+          <button class="lvl-btn" data-lvl="1">2. DON'T SHOUT EARLY!</button>
+          <button class="lvl-btn" data-lvl="2">3. DEEP vs HIGH PITCH</button>
+          <button class="lvl-btn" data-lvl="3">4. CHAOS ROULETTE</button>
+          <button class="lvl-btn" data-lvl="4">5. BOSS: SCREAM DEMON</button>
+        </div>
+
+        <div class="btn-row">
+          <button id="btn-mic" class="punch-btn btn-go">TURN ON MIC &amp; FIGHT!</button>
+          <button id="btn-nomic" class="punch-btn btn-alt">NO MIC (KEYS)</button>
+        </div>
+        <div id="mic-err"></div>
+      </div>
+    </div>
+
+    <!-- Dare Penalty Overlay -->
+    <div id="dare-overlay" class="comic-overlay hidden">
+      <div class="comic-card dare-card">
+        <h1 id="dare-title">YOU LOST! DARE TIME!</h1>
+        <p id="dare-roast" style="margin-bottom:6px; font-weight:800;"></p>
+        <div class="dare-box" id="dare-text">
+          DO 5 JUMPING JACKS RIGHT NOW!
+        </div>
+        <div class="dare-sub">TO CLEAR PENALTY: DO THE DARE OR SCREAM HARD TO BREAK OUT!</div>
+        <div id="dare-progress-wrap">
+          <div id="dare-progress-fill"></div>
+          <div id="dare-progress-text">SCREAM TO BREAK FREE: 0%</div>
+        </div>
+        <div class="btn-row">
+          <button id="btn-dare-done" class="punch-btn btn-go">I DID THE DARE! CONTINUE</button>
+          <button id="btn-dare-curse" class="punch-btn btn-red">SKIP (NEXT ROUND 1.5X SPEED!)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div id="footer">
+    <div class="slider-wrap">
+      <span>MIC GAIN:</span>
+      <input id="sens-slider" type="range" min="0.5" max="4" step="0.1" value="1.8" />
+    </div>
+    <div class="slider-wrap">
+      <span>MIN SHOUT:</span>
+      <input id="thresh-slider" type="range" min="10" max="55" step="1" value="22" />
+    </div>
+    <div>
+      NO-MIC KEYS:
+      <span class="key-pill">SPACE</span> Shout |
+      <span class="key-pill">Z</span> Deep Growl |
+      <span class="key-pill">X</span> High Scream
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // DOM
+  const levelTag = document.getElementById('level-tag');
+  const mutatorTag = document.getElementById('mutator-tag');
+  const partyCb = document.getElementById('party-mode-cb');
+  const botScoreEl = document.getElementById('bot-score');
+  const youScoreEl = document.getElementById('you-score');
+  const botNameEl = document.getElementById('bot-name');
+  const winGoalEls = document.querySelectorAll('.win-goal');
+  const volFill = document.getElementById('vol-fill');
+  const volNum = document.getElementById('vol-num');
+  const threshLine = document.getElementById('thresh-line');
+  const reqLine = document.getElementById('req-line');
+  const pitchNeedle = document.getElementById('pitch-needle');
+  const pitchLabel = document.getElementById('pitch-label');
+
+  const menuOverlay = document.getElementById('menu-overlay');
+  const menuTitle = document.getElementById('menu-title');
+  const menuDesc = document.getElementById('menu-desc');
+  const btnMic = document.getElementById('btn-mic');
+  const btnNoMic = document.getElementById('btn-nomic');
+  const micErr = document.getElementById('mic-err');
+  const lvlBtns = document.querySelectorAll('.lvl-btn');
+
+  const dareOverlay = document.getElementById('dare-overlay');
+  const dareTitle = document.getElementById('dare-title');
+  const dareRoast = document.getElementById('dare-roast');
+  const dareTextEl = document.getElementById('dare-text');
+  const dareProgressFill = document.getElementById('dare-progress-fill');
+  const dareProgressText = document.getElementById('dare-progress-text');
+  const btnDareDone = document.getElementById('btn-dare-done');
+  const btnDareCurse = document.getElementById('btn-dare-curse');
+
+  const sensSlider = document.getElementById('sens-slider');
+  const threshSlider = document.getElementById('thresh-slider');
+
+  // Crazy Dares & Prompts
+  const DARES = [
+    "SCREAM 'I AM A POTATO!' AT MAX VOLUME!",
+    "DO 5 JUMPING JACKS RIGHT NOW!",
+    "BARK LIKE AN ANGRY CHIHUAHUA 3 TIMES!",
+    "HOLD A WEIRD FACE FOR 5 SECONDS WITHOUT BLINKING!",
+    "ROAR LIKE A DINOSAUR INTO THE MIC!",
+    "DO 5 SQUATS BEFORE TOUCHING THE KEYBOARD!",
+    "SAY 'SORRY GREAT MACHINE' IN A BABY VOICE!",
+    "MEOW LIKE A DRAMATIC CAT RIGHT NOW!",
+    "SPIN AROUND ONCE IN YOUR CHAIR / ROOM!",
+    "SING 'HAPPY BIRTHDAY' FAST FOR 3 SECONDS!",
+    "YELL 'MY VOICE IS WEAK!' LIKE AN ANIME VILLAIN!",
+    "DO A EVIL VILLAIN LAUGH: 'MWAHAHAHA!'"
+  ];
+
+  const ROASTS = [
+    "THE BOT LAUGHED AT YOUR WEAK LUNGS!",
+    "EVEN A MOUSE SHOUTS LOUDER THAN THAT!",
+    "EMOTIONAL DAMAGE! YOU GOT SMOKED!",
+    "SKILL ISSUE! USE YOUR DIAPHRAGM!",
+    "THE TOASTER JUST HUMILIATED YOU!"
+  ];
+
+  const SHOUT_WORDS = [
+    "YELL: 'GET REKT!!'",
+    "YELL: 'BANANA!!'",
+    "YELL: 'BOOM BABY!!'",
+    "SCREAM LIKE A GOAT!",
+    "YELL: 'NOT TODAY!!'",
+    "YELL: 'YEET!!'",
+    "YELL: 'FUS RO DAH!!'"
+  ];
+
+  // 5 Escalating Crazy Levels
+  const LEVELS = [
+    {
+      name: 'TOASTER PUNK',
+      challenge: 'SHOUT THE WORD PROMPT TO SMASH!',
+      winScore: 3,
+      ballSpeed: 490,
+      aiSpeed: 310,
+      paddleH: 112,
+      mode: 'words',
+      saws: 0,
+      armorReq: 0,
+      botColor: '#ff2a3c'
+    },
+    {
+      name: 'TRAP CANNON',
+      challenge: "DON'T SHOUT IN RED ZONE! WAIT FOR GREEN!",
+      winScore: 3,
+      ballSpeed: 560,
+      aiSpeed: 390,
+      paddleH: 110,
+      mode: 'freeze',
+      saws: 0,
+      armorReq: 0,
+      botColor: '#ff7700'
+    },
+    {
+      name: 'PITCH PSYCHO',
+      challenge: 'MATCH THE VOICE: DEEP GROWL vs HIGH SCREAM!',
+      winScore: 4,
+      ballSpeed: 570,
+      aiSpeed: 430,
+      paddleH: 115,
+      mode: 'pitch',
+      saws: 1,
+      armorReq: 0,
+      botColor: '#9d4edd'
+    },
+    {
+      name: 'CHAOS ROULETTE',
+      challenge: 'NEW CRAZY RULE EVERY SINGLE POINT!',
+      winScore: 4,
+      ballSpeed: 580,
+      aiSpeed: 460,
+      paddleH: 115,
+      mode: 'roulette',
+      saws: 1,
+      armorReq: 0,
+      botColor: '#00b4d8'
+    },
+    {
+      name: 'SCREAM DEMON 9000',
+      challenge: 'BOSS: 65%+ SHOUT TO BREAK ARMOR + MUTATORS!',
+      winScore: 5,
+      ballSpeed: 650,
+      aiSpeed: 540,
+      paddleH: 132,
+      mode: 'boss',
+      saws: 2,
+      armorReq: 65,
+      botColor: '#ff0044'
+    }
+  ];
+
+  const MUTATORS = [
+    { id: 'gravity', label: 'GRAVITY DROP! (Heavy Arc)' },
+    { id: 'triple', label: 'TRIPLE BALL PANIC!!' },
+    { id: 'tiny', label: 'TINY HYPER BULLET!' },
+    { id: 'giant', label: 'GIANT BOUNCY CHONK!' },
+    { id: 'ghost', label: 'BLINKING GHOST BALL!' }
+  ];
+
+  // Audio State
+  let audioCtx = null;
+  let analyser = null;
+  let timeData = null;
+  let freqData = null;
+  let micEnabled = false;
+  let sensitivity = parseFloat(sensSlider.value);
+  let shoutThreshold = parseInt(threshSlider.value, 10);
+
+  // Manual backup keys
+  let keyShout = false;
+  let keyDeep = false;
+  let keyHigh = false;
+  let manualCharge = 0;
+
+  sensSlider.addEventListener('input', () => { sensitivity = parseFloat(sensSlider.value); });
+  threshSlider.addEventListener('input', () => {
+    shoutThreshold = parseInt(threshSlider.value, 10);
+    threshLine.style.left = shoutThreshold + '%';
+  });
+  threshLine.style.left = shoutThreshold + '%';
+
+  lvlBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentLevel = parseInt(btn.dataset.lvl, 10);
+      applyLevelUI();
+    });
+  });
+
+  function playBeep(freq, dur, type = 'square', vol = 0.07) {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(50, freq * 0.45), audioCtx.currentTime + dur);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+  }
+
+  // Game State
+  let currentLevel = 0;
+  let gameState = 'menu'; // 'menu', 'charging', 'playing', 'roundEnd', 'dare', 'matchOver'
+  let roundTimer = 0;
+  let shake = 0;
+  let hitStop = 0;
+  let dareBreakProgress = 0;
+  let nextRoundCurseSpeed = 1;
+  let matchLostPending = false;
+
+  let playerScore = 0;
+  let botScore = 0;
+  let currentShout = 0;
+  let currentPitch = 'MID'; // 'DEEP', 'MID', 'HIGH'
+  let pitchNorm = 0.5;
+  let peakShout = 0;
+
+  let activePrompt = '';
+  let requiredPitch = null; // 'DEEP' | 'HIGH' | null
+  let activeMutator = null; // null or mutator object
+  let freezePunished = false;
+
+  let popups = []; // Comic text popups: "POW!", "YEET!", "OOF!"
+  let particles = [];
+  let balls = [];
+  let saws = [];
+
+  const bot = {
+    x: 82,
+    y: H / 2,
+    paddleH: 112,
+    speed: 320,
+    recoil: 0,
+    taunt: '',
+    tauntTimer: 0,
+    sweat: false,
+    armorFlash: 0
+  };
+
+  const hero = {
+    x: W - 82,
+    y: H / 2,
+    mouth: 0,
+    rage: 0
+  };
+
+  function applyLevelUI() {
+    const lvl = LEVELS[currentLevel];
+    levelTag.textContent = `LVL ${currentLevel + 1}: ${lvl.name}`;
+    mutatorTag.textContent = lvl.challenge;
+    botNameEl.textContent = lvl.name;
+    winGoalEls.forEach(el => { el.textContent = lvl.winScore; });
+
+    if (lvl.armorReq > 0) {
+      reqLine.style.display = 'block';
+      reqLine.style.left = lvl.armorReq + '%';
+    } else {
+      reqLine.style.display = 'none';
+    }
+
+    lvlBtns.forEach(b => b.classList.toggle('active', parseInt(b.dataset.lvl, 10) === currentLevel));
+  }
+
+  function addPopup(text, x, y, color = '#ffe600', size = 40) {
+    popups.push({
+      text, x, y, color, size,
+      rot: (Math.random() - 0.5) * 0.35,
+      vy: -55,
+      life: 0.95,
+      maxLife: 0.95
+    });
+  }
+
+  function addParticles(x, y, color, count = 18, spd = 340) {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = (0.3 + Math.random() * 0.9) * spd;
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s,
+        size: 4 + Math.random() * 7,
+        color,
+        life: 0.3 + Math.random() * 0.35,
+        maxLife: 0.65
+      });
+    }
+  }
+
+  function botSay(msg, dur = 1.8) {
+    bot.taunt = msg;
+    bot.tauntTimer = dur;
+  }
+
+  // Mic Init & Analysis
+  async function initMic() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false }
+      });
+      const src = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.2;
+      src.connect(analyser);
+      timeData = new Uint8Array(analyser.fftSize);
+      freqData = new Uint8Array(analyser.frequencyBinCount);
+      micEnabled = true;
+      startMatch();
+    } catch (err) {
+      micErr.style.display = 'block';
+      micErr.textContent = 'Mic blocked! Play with SPACE (Shout), Z (Deep), X (High).';
+    }
+  }
+
+  function analyzeVoice() {
+    let lvl = 0;
+    let detectedPitchNorm = 0.5;
+
+    if (micEnabled && analyser && timeData && freqData) {
+      analyser.getByteTimeDomainData(timeData);
+      let sum = 0;
+      for (let i = 0; i < timeData.length; i++) {
+        const v = (timeData[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / timeData.length);
+      lvl = Math.min(100, rms * 265 * sensitivity);
+
+      // Pitch via spectral centroid when loud enough
+      if (lvl > 12) {
+        analyser.getByteFrequencyData(freqData);
+        const nyquist = (audioCtx.sampleRate || 48000) / 2;
+        const binHz = nyquist / freqData.length;
+        let weightedSum = 0;
+        let magSum = 0;
+        // Focus on 80Hz - 2200Hz voice range
+        const minBin = Math.max(1, Math.floor(80 / binHz));
+        const maxBin = Math.min(freqData.length - 1, Math.floor(2200 / binHz));
+        for (let i = minBin; i <= maxBin; i++) {
+          const m = freqData[i];
+          if (m > 20) {
+            weightedSum += m * (i * binHz);
+            magSum += m;
+          }
+        }
+        if (magSum > 0) {
+          const centroid = weightedSum / magSum;
+          // Map ~220Hz -> 0.0 (DEEP), ~950Hz -> 1.0 (HIGH)
+          detectedPitchNorm = Math.max(0, Math.min(1, (centroid - 230) / 700));
+        }
+      }
+    }
+
+    // Keyboard overrides / backup
+    const anyKey = keyShout || keyDeep || keyHigh;
+    if (anyKey) manualCharge = Math.min(100, manualCharge + 10);
+    else manualCharge = Math.max(0, manualCharge - 12);
+
+    if (keyDeep) detectedPitchNorm = 0.1;
+    else if (keyHigh) detectedPitchNorm = 0.92;
+    else if (keyShout && !micEnabled) detectedPitchNorm = 0.5;
+
+    const finalVol = Math.round(Math.max(lvl, manualCharge));
+    pitchNorm += (detectedPitchNorm - pitchNorm) * 0.25;
+
+    if (pitchNorm < 0.36) currentPitch = 'DEEP';
+    else if (pitchNorm > 0.64) currentPitch = 'HIGH';
+    else currentPitch = 'MID';
+
+    return finalVol;
+  }
+
+  function setupSaws() {
+    saws = [];
+    const count = LEVELS[currentLevel].saws;
+    if (count === 1) {
+      saws.push({ x: W * 0.48, y: H / 2, baseY: H / 2, r: 28, amp: 135, freq: 2.3, phase: 0, rot: 0 });
+    } else if (count >= 2) {
+      saws.push({ x: W * 0.43, y: H * 0.3, baseY: H * 0.32, r: 26, amp: 100, freq: 2.5, phase: 0, rot: 0 });
+      saws.push({ x: W * 0.54, y: H * 0.7, baseY: H * 0.68, r: 26, amp: 100, freq: 2.5, phase: Math.PI, rot: 0 });
+    }
+  }
+
+  function startMatch() {
+    const lvl = LEVELS[currentLevel];
+    menuOverlay.classList.add('hidden');
+    dareOverlay.classList.add('hidden');
+    playerScore = 0;
+    botScore = 0;
+    nextRoundCurseSpeed = 1;
+    matchLostPending = false;
+    bot.paddleH = lvl.paddleH;
+    bot.speed = lvl.aiSpeed;
+    applyLevelUI();
+    setupSaws();
+    updateScoreUI();
+    botSay("PREPARE TO LOSE!", 2.0);
+    startRound();
+  }
+
+  function startRound() {
+    const lvl = LEVELS[currentLevel];
+    gameState = 'charging';
+    roundTimer = 0.65;
+    bot.y = H / 2;
+    bot.sweat = false;
+    freezePunished = false;
+    peakShout = 0;
+
+    // Pick crazy challenge for this round
+    requiredPitch = null;
+    activeMutator = null;
+    activePrompt = '';
+
+    if (lvl.mode === 'words') {
+      activePrompt = SHOUT_WORDS[Math.floor(Math.random() * SHOUT_WORDS.length)];
+    } else if (lvl.mode === 'freeze') {
+      activePrompt = "WAIT FOR GREEN ZONE!";
+    } else if (lvl.mode === 'pitch') {
+      requiredPitch = Math.random() < 0.5 ? 'DEEP' : 'HIGH';
+      activePrompt = requiredPitch === 'DEEP' ? 'USE A DEEP MONSTER VOICE!' : 'DO A HIGH ANIME SCREAM!';
+    } else if (lvl.mode === 'roulette' || lvl.mode === 'boss') {
+      activeMutator = MUTATORS[Math.floor(Math.random() * MUTATORS.length)];
+      mutatorTag.textContent = `ACTIVE MUTATOR: ${activeMutator.label}`;
+      if (lvl.mode === 'boss') {
+        activePrompt = 'SHOUT 65%+ TO SMASH BOSS ARMOR!';
+      } else {
+        activePrompt = activeMutator.label;
+      }
+    }
+
+    balls = [{
+      x: bot.x + 48,
+      y: bot.y,
+      vx: 0,
+      vy: 0,
+      r: (activeMutator && activeMutator.id === 'tiny') ? 9 : (activeMutator && activeMutator.id === 'giant') ? 30 : 16,
+      power: 0,
+      shoutVal: 0,
+      trail: []
+    }];
+  }
+
+  function launchBall() {
+    const lvl = LEVELS[currentLevel];
+    gameState = 'playing';
+    bot.recoil = 20;
+
+    const isTriple = (activeMutator && activeMutator.id === 'triple');
+    if (isTriple) {
+      for (let k = 0; k < 2; k++) {
+        balls.push({
+          x: bot.x + 48, y: bot.y, vx: 0, vy: 0,
+          r: 14, power: 0, shoutVal: 0, trail: []
+        });
+      }
+      addPopup('TRIPLE BALLS!!', W / 2, 130, '#ffe600', 46);
+    }
+
+    const baseSpd = lvl.ballSpeed * nextRoundCurseSpeed * ((activeMutator && activeMutator.id === 'tiny') ? 1.25 : 1);
+    nextRoundCurseSpeed = 1; // reset curse after 1 round
+
+    balls.forEach((b, idx) => {
+      const ang = isTriple ? (idx - 1) * 0.35 + (Math.random() - 0.5) * 0.15 : (Math.random() - 0.5) * 0.72;
+      b.vx = Math.cos(ang) * baseSpd;
+      b.vy = Math.sin(ang) * baseSpd;
+      addParticles(b.x, b.y, lvl.botColor, 14, 240);
+    });
+
+    playBeep(220, 0.13, 'square', 0.07);
+  }
+
+  function updateScoreUI() {
+    botScoreEl.textContent = botScore;
+    youScoreEl.textContent = playerScore;
+  }
+
+  function triggerDareScreen(isMatchLoss) {
+    gameState = 'dare';
+    matchLostPending = isMatchLoss;
+    dareBreakProgress = 0;
+    dareProgressFill.style.width = '0%';
+    dareProgressText.textContent = 'SCREAM TO BREAK FREE: 0%';
+
+    dareTitle.textContent = isMatchLoss ? 'MATCH LOST!! BIG DARE!' : 'POINT LOST!! DO THE DARE!';
+    dareRoast.textContent = ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    dareTextEl.textContent = DARES[Math.floor(Math.random() * DARES.length)];
+    dareOverlay.classList.remove('hidden');
+  }
+
+  function scorePoint(winner, b) {
+    const lvl = LEVELS[currentLevel];
+    gameState = 'roundEnd';
+    roundTimer = 0.95;
+
+    if (winner === 'player') {
+      playerScore++;
+      addPopup('SMASHED! +1', W / 2, 140, '#52ff33', 52);
+      addParticles(b.x, b.y, '#52ff33', 40, 480);
+      botSay("NOOOOO!!", 1.5);
+      playBeep(660, 0.25, 'triangle', 0.1);
+      shake = 16;
+    } else {
+      botScore++;
+      addPopup('WRECKED!!', W / 2, 140, '#ff2a3c', 52);
+      addParticles(b.x, b.y, '#ff2a3c', 38, 420);
+      botSay("HAHAHA TOO WEAK!", 1.8);
+      playBeep(120, 0.35, 'sawtooth', 0.1);
+      shake = 14;
+    }
+
+    updateScoreUI();
+
+    const playerWonMatch = playerScore >= lvl.winScore;
+    const botWonMatch = botScore >= lvl.winScore;
+
+    if (playerWonMatch) {
+      setTimeout(() => {
+        gameState = 'matchOver';
+        if (currentLevel < LEVELS.length - 1) {
+          currentLevel++;
+          applyLevelUI();
+          menuTitle.textContent = 'LEVEL DESTROYED!';
+          menuDesc.innerHTML = `You humiliated <b>${lvl.name}</b>!<br>NEXT: <b>LVL ${currentLevel + 1}: ${LEVELS[currentLevel].name}</b><br>${LEVELS[currentLevel].challenge}`;
+          btnMic.textContent = micEnabled ? `FIGHT LEVEL ${currentLevel + 1}!` : 'TURN ON MIC & FIGHT!';
+          btnNoMic.textContent = 'NO MIC (NEXT LVL)';
+        } else {
+          menuTitle.textContent = 'SCREAM GOD!! YOU BEAT ALL 5!';
+          menuDesc.innerHTML = `You shattered the <b>SCREAM DEMON 9000</b>! Your neighbors definitely heard you. Pick any level to play again!`;
+          btnMic.textContent = micEnabled ? 'PLAY AGAIN!' : 'TURN ON MIC & PLAY!';
+          btnNoMic.textContent = 'NO MIC (AGAIN)';
+        }
+        menuOverlay.classList.remove('hidden');
+      }, 850);
+    } else if (botWonMatch) {
+      setTimeout(() => {
+        triggerDareScreen(true);
+      }, 750);
+    } else if (winner === 'bot' && partyCb.checked) {
+      setTimeout(() => {
+        triggerDareScreen(false);
+      }, 700);
+    }
+  }
+
+  // Dare buttons
+  btnDareDone.addEventListener('click', () => {
+    dareOverlay.classList.add('hidden');
+    if (matchLostPending) startMatch();
+    else startRound();
+  });
+
+  btnDareCurse.addEventListener('click', () => {
+    nextRoundCurseSpeed = 1.45;
+    dareOverlay.classList.add('hidden');
+    addPopup('CURSE: 1.5X SPEED!', W / 2, 160, '#ff2a3c', 42);
+    if (matchLostPending) startMatch();
+    else startRound();
+  });
+
+  // Keyboard backup controls
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); keyShout = true; }
+    if (e.code === 'KeyZ') keyDeep = true;
+    if (e.code === 'KeyX') keyHigh = true;
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') keyShout = false;
+    if (e.code === 'KeyZ') keyDeep = false;
+    if (e.code === 'KeyX') keyHigh = false;
+  });
+  canvas.addEventListener('mousedown', () => { keyShout = true; });
+  window.addEventListener('mouseup', () => { keyShout = false; });
+  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); keyShout = true; });
+  window.addEventListener('touchend', () => { keyShout = false; });
+
+  btnMic.addEventListener('click', () => {
+    if (micEnabled) startMatch();
+    else initMic();
+  });
+  btnNoMic.addEventListener('click', startMatch);
+
+  // Main Update
+  let lastTime = performance.now();
+  function update(dt) {
+    const lvl = LEVELS[currentLevel];
+    currentShout = analyzeVoice();
+
+    volFill.style.width = currentShout + '%';
+    volNum.textContent = currentShout;
+    pitchNeedle.style.left = (pitchNorm * 100) + '%';
+    pitchLabel.textContent = currentPitch;
+    pitchLabel.style.color = currentPitch === 'DEEP' ? '#ff5500' : currentPitch === 'HIGH' ? '#00b4d8' : '#111';
+
+    hero.mouth += ((currentShout / 100) - hero.mouth) * 0.35;
+    hero.rage = Math.max(0, hero.rage - dt * 2);
+    bot.recoil = Math.max(0, bot.recoil - dt * 65);
+    bot.armorFlash = Math.max(0, bot.armorFlash - dt * 3);
+    if (bot.tauntTimer > 0) bot.tauntTimer -= dt;
+    shake = Math.max(0, shake - dt * 40);
+
+    // Dare Scream-to-Break-Free logic!
+    if (gameState === 'dare') {
+      if (currentShout >= 55) {
+        dareBreakProgress = Math.min(100, dareBreakProgress + dt * 115);
+        shake = 6;
+      } else {
+        dareBreakProgress = Math.max(0, dareBreakProgress - dt * 25);
+      }
+      dareProgressFill.style.width = dareBreakProgress + '%';
+      dareProgressText.textContent = `SCREAM TO BREAK FREE: ${Math.round(dareBreakProgress)}%`;
+      if (dareBreakProgress >= 100) {
+        playBeep(720, 0.2, 'triangle', 0.1);
+        dareOverlay.classList.add('hidden');
+        if (matchLostPending) startMatch();
+        else startRound();
+      }
+      return;
+    }
+
+    // Move Saws
+    const nowSec = performance.now() * 0.001;
+    for (const s of saws) {
+      s.y = s.baseY + Math.sin(nowSec * s.freq + s.phase) * s.amp;
+      s.rot += dt * 7;
+    }
+
+    // Popups & Particles
+    for (let i = popups.length - 1; i >= 0; i--) {
+      const p = popups[i];
+      p.y += p.vy * dt;
+      p.vy *= 0.94;
+      p.life -= dt;
+      if (p.life <= 0) popups.splice(i, 1);
+    }
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.94;
+      p.vy *= 0.94;
+      p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    if (hitStop > 0) { hitStop -= dt; return; }
+
+    if (gameState === 'charging') {
+      roundTimer -= dt;
+      bot.y = H / 2 + Math.sin(nowSec * 8) * 85;
+      if (balls[0]) { balls[0].x = bot.x + 48; balls[0].y = bot.y; }
+      if (roundTimer <= 0) launchBall();
+      return;
+    }
+
+    if (gameState === 'roundEnd') {
+      roundTimer -= dt;
+      if (roundTimer <= 0 && playerScore < lvl.winScore && botScore < lvl.winScore) {
+        startRound();
+      }
+      return;
+    }
+
+    if (gameState !== 'playing') return;
+
+    // Level 2 FREEZE TRAP: If shouting while ball is on left half!
+    if (lvl.mode === 'freeze' && !freezePunished) {
+      const ballInRed = balls.some(b => b.vx > 0 && b.x < W * 0.52);
+      if (ballInRed && currentShout >= shoutThreshold) {
+        freezePunished = true;
+        balls.forEach(b => { b.vx *= 1.45; b.vy *= 1.3; });
+        addPopup('TOO EARLY!! 1.5X SPEED!', W / 2, 160, '#ff2a3c', 44);
+        botSay("BAITED YOU!! HAHA!", 1.5);
+        playBeep(160, 0.2, 'sawtooth', 0.08);
+        shake = 10;
+      }
+    }
+
+    // Track peak shout when ball approaches right side
+    if (balls.some(b => b.vx > 0 && b.x > W * 0.5)) {
+      peakShout = Math.max(peakShout, currentShout);
+    } else {
+      peakShout = 0;
+    }
+
+    // Bot AI tracks closest incoming ball
+    let targetBall = null;
+    let minX = Infinity;
+    for (const b of balls) {
+      if (b.vx < 0 && b.x < minX) { minX = b.x; targetBall = b; }
+    }
+    const targetY = targetBall ? targetBall.y : H / 2;
+    const dy = targetY - bot.y;
+    const step = bot.speed * dt;
+    if (Math.abs(dy) > step) bot.y += Math.sign(dy) * step;
+    else bot.y = targetY;
+    bot.y = Math.max(70, Math.min(H - 70, bot.y));
+    bot.sweat = !!(targetBall && targetBall.power === 2);
+
+    const activeShout = Math.max(currentShout, peakShout * 0.9);
+    const isShouting = activeShout >= shoutThreshold;
+    const shieldReach = isShouting ? 95 + (activeShout / 100) * 95 : 0;
+    const shieldFrontX = W - 70 - shieldReach;
+
+    // Update Balls
+    for (const b of balls) {
+      if (activeMutator && activeMutator.id === 'gravity') {
+        b.vy += 680 * dt;
+      }
+
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+
+      b.trail.push({ x: b.x, y: b.y, power: b.power });
+      if (b.trail.length > 14) b.trail.shift();
+
+      // Ceiling / Floor bounce
+      if (b.y - b.r < 14) {
+        b.y = 14 + b.r;
+        b.vy = Math.abs(b.vy);
+        addParticles(b.x, b.y, '#ffe600', 7, 160);
+      } else if (b.y + b.r > H - 14) {
+        b.y = H - 14 - b.r;
+        b.vy = -Math.abs(b.vy) * (activeMutator && activeMutator.id === 'gravity' ? 1.02 : 1);
+        addParticles(b.x, b.y, '#ffe600', 7, 160);
+      }
+
+      // Sawblade collisions
+      for (const s of saws) {
+        const dx = b.x - s.x;
+        const dy = b.y - s.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < b.r + s.r && dist > 0.001) {
+          const nx = dx / dist;
+          const ny = dy / dist;
+          b.x = s.x + nx * (b.r + s.r + 3);
+          b.y = s.y + ny * (b.r + s.r + 3);
+          const dot = b.vx * nx + b.vy * ny;
+          b.vx = (b.vx - 2 * dot * nx) * 1.05;
+          b.vy = (b.vy - 2 * dot * ny) * 1.05;
+          addParticles(b.x, b.y, '#ff2a3c', 12, 260);
+          addPopup('CLANG!', s.x, s.y - 30, '#fff', 28);
+          playBeep(520, 0.06, 'sawtooth', 0.05);
+        }
+      }
+
+      // Player Sonic Bounce
+      if (b.vx > 0 && isShouting && b.x + b.r >= shieldFrontX && b.x < W - 40) {
+        let shoutNorm = Math.min(1, (activeShout - shoutThreshold) / (100 - shoutThreshold));
+
+        // Check Pitch Challenge (Level 3)
+        let pitchBonus = 1;
+        if (requiredPitch) {
+          if (currentPitch === requiredPitch) {
+            pitchBonus = 1.35;
+            addPopup(`PERFECT ${requiredPitch}!!`, W - 260, b.y - 40, '#52ff33', 38);
+          } else {
+            pitchBonus = 0.65;
+            addPopup(`WRONG PITCH!`, W - 260, b.y - 40, '#ff2a3c', 32);
+          }
+        }
+
+        const bounceSpeed = (560 + shoutNorm * 780) * pitchBonus;
+        const aimAwayY = bot.y < H / 2 ? H * 0.8 : H * 0.2;
+        const aimY = b.y * (1 - shoutNorm * 0.68) + aimAwayY * (shoutNorm * 0.68);
+        const angle = Math.atan2(aimY - b.y, (bot.x + 20) - b.x);
+
+        b.vx = -Math.abs(Math.cos(angle) * bounceSpeed);
+        b.vy = Math.sin(angle) * bounceSpeed + (Math.random() - 0.5) * 150;
+        b.shoutVal = activeShout;
+        hero.rage = 1;
+
+        if (activeShout >= 72 || pitchBonus > 1) {
+          b.power = 2;
+          shake = 18;
+          hitStop = 0.032;
+          const words = ['KABOOM!!', 'YEET!!', 'MAX LUNGS!!', 'GIGA SMASH!!'];
+          addPopup(words[Math.floor(Math.random() * words.length)], b.x - 40, b.y - 25, '#ffe600', 46);
+          addParticles(b.x, b.y, '#ffe600', 28, 440);
+          playBeep(560, 0.16, 'sawtooth', 0.09);
+        } else if (activeShout >= 42) {
+          b.power = 1;
+          shake = 9;
+          addPopup('POW!!', b.x - 30, b.y - 20, '#00e5ff', 36);
+          addParticles(b.x, b.y, '#00e5ff', 16, 300);
+          playBeep(400, 0.12, 'triangle', 0.08);
+        } else {
+          b.power = 0;
+          shake = 4;
+          addPopup('BOOP', b.x - 20, b.y - 15, '#fff', 26);
+          addParticles(b.x, b.y, '#fff', 10, 200);
+          playBeep(290, 0.09, 'sine', 0.07);
+        }
+
+        b.x = shieldFrontX - b.r - 2;
+        peakShout = 0;
+      }
+
+      // Bot Paddle Collision
+      if (
+        b.vx < 0 &&
+        b.x - b.r <= bot.x + 32 &&
+        b.x + b.r >= bot.x - 10 &&
+        Math.abs(b.y - bot.y) <= bot.paddleH / 2 + b.r
+      ) {
+        b.x = bot.x + 32 + b.r;
+        const offset = (b.y - bot.y) / (bot.paddleH / 2);
+        const speed = Math.min(980, Math.hypot(b.vx, b.vy) * 0.94 + 55);
+        const ang = offset * 0.72;
+        b.vx = Math.cos(ang) * speed;
+        b.vy = Math.sin(ang) * speed;
+        b.power = 0;
+        bot.recoil = 16;
+        shake = 7;
+        addPopup('BLOCKED!', bot.x + 70, b.y, '#ff2a3c', 30);
+        addParticles(b.x, b.y, lvl.botColor, 16, 260);
+        playBeep(195, 0.12, 'square', 0.07);
+      }
+
+      // Boss Armor Gate (Level 5)
+      if (b.vx < 0 && b.x - b.r < 36 && lvl.armorReq > 0 && b.shoutVal < lvl.armorReq) {
+        b.x = 38 + b.r;
+        b.vx = Math.abs(b.vx) * 0.95;
+        b.vy += (Math.random() - 0.5) * 200;
+        b.power = 0;
+        bot.armorFlash = 1;
+        shake = 11;
+        addPopup(`NEED ${lvl.armorReq}% SHOUT!`, 210, b.y, '#ff2a3c', 34);
+        botSay("WEAK! MY ARMOR HELD!", 1.5);
+        playBeep(140, 0.18, 'sawtooth', 0.09);
+      }
+
+      // Goal Check
+      if (b.x - b.r < 12) {
+        scorePoint('player', b);
+        break;
+      } else if (b.x + b.r > W - 12) {
+        scorePoint('bot', b);
+        break;
+      }
+    }
+  }
+
+  // Draw Comic Style Arena
+  function draw() {
+    const lvl = LEVELS[currentLevel];
+    ctx.save();
+
+    if (shake > 0) {
+      ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+    }
+
+    // Comic Action Background
+    ctx.fillStyle = '#18161f';
+    ctx.fillRect(0, 0, W, H);
+
+    // Diagonal comic stripes
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+    const stripeShift = (performance.now() * 0.04) % 80;
+    for (let x = -H; x < W + H; x += 80) {
+      ctx.beginPath();
+      ctx.moveTo(x + stripeShift, 0);
+      ctx.lineTo(x + 35 + stripeShift, 0);
+      ctx.lineTo(x - 120 + stripeShift, H);
+      ctx.lineTo(x - 155 + stripeShift, H);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Freeze Level Red/Green Zones
+    if (lvl.mode === 'freeze') {
+      ctx.fillStyle = 'rgba(255, 42, 60, 0.14)';
+      ctx.fillRect(0, 14, W * 0.52, H - 28);
+      ctx.fillStyle = 'rgba(82, 255, 51, 0.12)';
+      ctx.fillRect(W * 0.52, 14, W * 0.48, H - 28);
+
+      ctx.font = '800 18px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255, 80, 90, 0.65)';
+      ctx.fillText("DON'T SHOUT HERE!", W * 0.28, H - 28);
+      ctx.fillStyle = 'rgba(82, 255, 51, 0.75)';
+      ctx.fillText('SHOUT HERE!!', W * 0.75, H - 28);
+    }
+
+    // Center Ink Divider
+    ctx.strokeStyle = '#333042';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([16, 12]);
+    ctx.beginPath();
+    ctx.moveTo(W / 2, 16);
+    ctx.lineTo(W / 2, H - 16);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Top/Bottom Hazard Stripes
+    ctx.fillStyle = '#ffe600';
+    ctx.fillRect(0, 0, W, 12);
+    ctx.fillRect(0, H - 12, W, 12);
+    ctx.fillStyle = '#111';
+    for (let x = 0; x < W; x += 32) {
+      ctx.fillRect(x, 0, 16, 12);
+      ctx.fillRect(x + 16, H - 12, 16, 12);
+    }
+
+    // Boss Armor Gate
+    if (lvl.armorReq > 0) {
+      ctx.strokeStyle = bot.armorFlash > 0 ? '#ffe600' : '#ff2a3c';
+      ctx.lineWidth = bot.armorFlash > 0 ? 10 : 6;
+      ctx.setLineDash([18, 10]);
+      ctx.beginPath();
+      ctx.moveTo(32, 14);
+      ctx.lineTo(32, H - 14);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Center Challenge Prompt Banner (Comic Box)
+    if (activePrompt && (gameState === 'playing' || gameState === 'charging')) {
+      ctx.save();
+      const boxW = 410;
+      const boxH = 42;
+      const bx = W / 2 - boxW / 2;
+      const by = 24;
+      ctx.fillStyle = '#111';
+      ctx.fillRect(bx + 5, by + 5, boxW, boxH);
+      ctx.fillStyle = requiredPitch === 'DEEP' ? '#ff5500' : requiredPitch === 'HIGH' ? '#00e5ff' : '#ffe600';
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 4;
+      ctx.fillRect(bx, by, boxW, boxH);
+      ctx.strokeRect(bx, by, boxW, boxH);
+
+      ctx.fillStyle = '#111';
+      ctx.font = '800 18px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(activePrompt, W / 2, by + boxH / 2 + 1);
+      ctx.restore();
+    }
+
+    // Sawblades
+    for (const s of saws) {
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate(s.rot);
+      ctx.fillStyle = '#d9dce6';
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      const teeth = 10;
+      for (let i = 0; i < teeth * 2; i++) {
+        const ang = (i * Math.PI) / teeth;
+        const rad = i % 2 === 0 ? s.r + 7 : s.r - 4;
+        if (i === 0) ctx.moveTo(Math.cos(ang) * rad, Math.sin(ang) * rad);
+        else ctx.lineTo(Math.cos(ang) * rad, Math.sin(ang) * rad);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#ff2a3c';
+      ctx.beginPath();
+      ctx.arc(0, 0, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Player Sonic Blast Shield
+    const isShouting = currentShout >= shoutThreshold;
+    if (isShouting) {
+      const reach = 95 + (currentShout / 100) * 95;
+      const sx = W - 70 - reach;
+      const col = currentShout >= 72 ? '#ffe600' : '#52ff33';
+
+      ctx.fillStyle = col;
+      ctx.globalAlpha = 0.22;
+      ctx.fillRect(sx, 14, reach, H - 28);
+      ctx.globalAlpha = 1;
+
+      // Jagged comic lightning wall
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      for (let y = 16; y <= H - 16; y += 22) {
+        const j = Math.sin(y * 0.12 + performance.now() * 0.04) * (8 + currentShout * 0.14);
+        if (y === 16) ctx.moveTo(sx + j, y);
+        else ctx.lineTo(sx + j, y);
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 5;
+      ctx.stroke();
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      ctx.moveTo(W - 160, 20);
+      ctx.lineTo(W - 160, H - 20);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Draw Expressive Machine Bot (Left)
+    ctx.save();
+    ctx.translate(bot.x - bot.recoil, bot.y);
+
+    // Shield Paddle
+    ctx.fillStyle = lvl.botColor;
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 4;
+    ctx.fillRect(20, -bot.paddleH / 2, 16, bot.paddleH);
+    ctx.strokeRect(20, -bot.paddleH / 2, 16, bot.paddleH);
+
+    // Bot Head Box
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-40, -40, 62, 80);
+    ctx.strokeRect(-40, -40, 62, 80);
+
+    // Angry Eyes
+    ctx.fillStyle = bot.sweat ? '#fff' : '#ffe600';
+    ctx.beginPath();
+    ctx.arc(-18, -12, 9, 0, Math.PI * 2);
+    ctx.arc(6, -12, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Pupils
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(-15, -12, 4, 0, Math.PI * 2);
+    ctx.arc(9, -12, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Angry Eyebrows
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(-28, -26); ctx.lineTo(-10, -18);
+    ctx.moveTo(16, -26); ctx.lineTo(-2, -18);
+    ctx.stroke();
+
+    // Jagged Mouth
+    ctx.fillStyle = lvl.botColor;
+    ctx.fillRect(-26, 10, 38, 16);
+    ctx.strokeRect(-26, 10, 38, 16);
+
+    // Sweat drop if panicked!
+    if (bot.sweat) {
+      ctx.fillStyle = '#00e5ff';
+      ctx.beginPath();
+      ctx.arc(-44, -26, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Speech Bubble Taunt
+    if (bot.tauntTimer > 0 && bot.taunt) {
+      ctx.save();
+      ctx.font = '800 13px "Space Grotesk", sans-serif';
+      const tw = ctx.measureText(bot.taunt).width + 20;
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 3;
+      ctx.fillRect(-10, -82, tw, 30);
+      ctx.strokeRect(-10, -82, tw, 30);
+      ctx.fillStyle = '#111';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(bot.taunt, 0, -67);
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // Draw Expressive Screaming Player Head (Right)
+    ctx.save();
+    ctx.translate(hero.x, H / 2);
+    const mOpen = 8 + hero.mouth * 44;
+
+    // Spiky Hair / Shock Aura
+    ctx.fillStyle = currentShout >= 72 ? '#ffe600' : '#52ff33';
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(6, 0, 36 + hero.mouth * 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Screaming Mouth (facing left)
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.ellipse(-10, 8, 14 + hero.mouth * 16, mOpen * 0.65, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ff2a3c';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Bulging Eyes
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 3;
+    const eyeR = 8 + hero.mouth * 5;
+    ctx.beginPath();
+    ctx.arc(-6, -16, eyeR, 0, Math.PI * 2);
+    ctx.arc(14, -16, eyeR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(-8, -16, 3, 0, Math.PI * 2);
+    ctx.arc(12, -16, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Balls & Trails
+    for (const b of balls) {
+      // Ghost mutator flicker
+      if (activeMutator && activeMutator.id === 'ghost' && Math.sin(performance.now() * 0.025) > 0.35) {
+        continue;
+      }
+
+      for (let i = 0; i < b.trail.length; i++) {
+        const t = b.trail[i];
+        const f = (i + 1) / b.trail.length;
+        ctx.globalAlpha = f * 0.5;
+        ctx.fillStyle = t.power === 2 ? '#ffe600' : t.power === 1 ? '#52ff33' : '#fff';
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, b.r * f, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = b.power === 2 ? '#ffe600' : b.power === 1 ? '#52ff33' : '#fff';
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Square Comic Particles
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+      ctx.fillStyle = p.color;
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 2;
+      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+      ctx.strokeRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+    ctx.globalAlpha = 1;
+
+    // Comic Popups ("POW!", "YEET!", "WRECKED!")
+    for (const pop of popups) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, pop.life / pop.maxLife * 1.4);
+      ctx.translate(pop.x, pop.y);
+      ctx.rotate(pop.rot);
+      ctx.font = `900 ${pop.size}px "Bangers", Impact, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 7;
+      ctx.strokeStyle = '#111';
+      ctx.strokeText(pop.text, 0, 0);
+      ctx.fillStyle = pop.color;
+      ctx.fillText(pop.text, 0, 0);
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function loop(now) {
+    const dt = Math.min(0.035, (now - lastTime) / 1000);
+    lastTime = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  applyLevelUI();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
